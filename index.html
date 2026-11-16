@@ -27,4 +27,230 @@
   h1 span { color: var(--muted); font-weight: 400; }
   .nav { display: flex; gap: 8px; }
   button {
-    font: inherit; cursor: pointer; border: 1px solid var(--line); background:
+    font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--surface);
+    color: var(--ink); padding: 8px 14px; border-radius: 8px;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  .settings {
+    display: flex; flex-wrap: wrap; gap: 20px; align-items: center;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 16px; margin-bottom: 20px; font-size: 0.9rem;
+  }
+  .settings label { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+  select, input[type="text"], input[type="color"] {
+    font: inherit; color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px;
+  }
+  input[type="color"] { padding: 2px; width: 40px; height: 32px; cursor: pointer; }
+  .swatches { display: flex; gap: 6px; }
+  .swatch { width: 24px; height: 24px; border-radius: 50%; padding: 0; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+
+  .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .dow { background: var(--surface); padding: 10px 8px; font-size: 0.8rem; color: var(--muted); text-align: center; font-weight: 600; }
+  .day {
+    background: var(--surface); min-height: 96px; padding: 6px; text-align: left; border: 0; border-radius: 0;
+    display: flex; flex-direction: column; gap: 3px; overflow: hidden;
+  }
+  .day:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+  .day.other { opacity: 0.4; }
+  .num { font-weight: 600; font-size: 0.9rem; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; }
+  .day.today .num { background: var(--accent); color: var(--accent-ink); }
+  .ev { font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); width: min(420px, 92vw); padding: 20px; }
+  dialog::backdrop { background: rgba(10, 14, 22, 0.55); }
+  dialog h2 { margin: 0 0 12px; font-size: 1.2rem; }
+  .row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .row input[type="text"] { flex: 1; }
+  ul { list-style: none; margin: 0 0 12px; padding: 0; }
+  li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  li .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+  li span.t { flex: 1; }
+  li button { padding: 2px 8px; font-size: 0.8rem; }
+  .empty { color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 600px) {
+    .day { min-height: 64px; padding: 3px; }
+    .ev { font-size: 0.62rem; padding: 1px 3px; }
+    .dow { padding: 8px 2px; font-size: 0.7rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title"></h1>
+    <div class="nav">
+      <button id="prev" aria-label="Previous month">Prev</button>
+      <button id="today">Today</button>
+      <button id="next" aria-label="Next month">Next</button>
+    </div>
+  </header>
+
+  <section class="settings" aria-label="Calendar settings">
+    <label>Accent
+      <span class="swatches" id="swatches"></span>
+      <input type="color" id="accent" aria-label="Custom accent color">
+    </label>
+    <label>Week starts on
+      <select id="weekStart"><option value="0">Sunday</option><option value="1">Monday</option></select>
+    </label>
+    <label>Theme
+      <select id="theme"><option value="auto">Match device</option><option value="light">Light</option><option value="dark">Dark</option></select>
+    </label>
+    <label>Cell height
+      <select id="density"><option value="64">Compact</option><option value="96">Regular</option><option value="130">Roomy</option></select>
+    </label>
+  </section>
+
+  <div class="grid" id="grid" role="grid"></div>
+</div>
+
+<dialog id="dlg">
+  <h2 id="dlgTitle"></h2>
+  <ul id="list"></ul>
+  <div class="row">
+    <input type="text" id="evTitle" placeholder="New event" maxlength="60" aria-label="Event title">
+    <input type="color" id="evColor" aria-label="Event color">
+  </div>
+  <div class="row" style="justify-content:flex-end; margin:0">
+    <button id="close">Close</button>
+    <button class="primary" id="add">Add event</button>
+  </div>
+</dialog>
+
+<script>
+const $ = id => document.getElementById(id);
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const DOWS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const PRESETS = ["#1f8a70", "#3b6fd4", "#c2410c", "#9333ea", "#be185d", "#475569"];
+
+// Saved state (localStorage may be unavailable, so every access is guarded)
+let state = { accent: PRESETS[0], weekStart: 0, theme: "auto", density: 96, events: {} };
+try { Object.assign(state, JSON.parse(localStorage.getItem("calendar-state") || "{}")); } catch (e) {}
+const save = () => { try { localStorage.setItem("calendar-state", JSON.stringify(state)); } catch (e) {} };
+
+let view = new Date(); view.setDate(1);
+let selected = null;
+
+const key = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+function applySettings() {
+  const r = document.documentElement;
+  r.style.setProperty("--accent", state.accent);
+  // pick readable text color on the accent
+  const n = parseInt(state.accent.slice(1), 16);
+  const lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255));
+  r.style.setProperty("--accent-ink", lum > 160 ? "#111" : "#fff");
+  if (state.theme === "auto") r.removeAttribute("data-theme"); else r.setAttribute("data-theme", state.theme);
+  if (state.theme === "dark") {
+    Object.entries({"--bg":"#12161f","--surface":"#1b212d","--ink":"#e8ecf4","--muted":"#8e98ab","--line":"#2b3342"})
+      .forEach(([k, v]) => r.style.setProperty(k, v));
+  } else {
+    ["--bg","--surface","--ink","--muted","--line"].forEach(k => r.style.removeProperty(k));
+  }
+  $("accent").value = state.accent;
+  $("weekStart").value = state.weekStart;
+  $("theme").value = state.theme;
+  $("density").value = state.density;
+  $("evColor").value = $("evColor").dataset.touched ? $("evColor").value : state.accent;
+}
+
+function render() {
+  $("title").innerHTML = `${MONTHS[view.getMonth()]} <span>${view.getFullYear()}</span>`;
+  const grid = $("grid");
+  grid.innerHTML = "";
+  for (let i = 0; i < 7; i++) {
+    const h = document.createElement("div");
+    h.className = "dow"; h.textContent = DOWS[(i + state.weekStart) % 7];
+    grid.appendChild(h);
+  }
+  const first = new Date(view.getFullYear(), view.getMonth(), 1);
+  const offset = (first.getDay() - state.weekStart + 7) % 7;
+  const start = new Date(first); start.setDate(1 - offset);
+  const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+  const weeks = Math.ceil((offset + daysInMonth) / 7);
+  const todayKey = key(new Date());
+
+  for (let i = 0; i < weeks * 7; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const k = key(d);
+    const cell = document.createElement("button");
+    cell.className = "day" + (d.getMonth() !== view.getMonth() ? " other" : "") + (k === todayKey ? " today" : "");
+    cell.style.minHeight = state.density + "px";
+    cell.setAttribute("aria-label", d.toDateString());
+    cell.innerHTML = `<span class="num">${d.getDate()}</span>`;
+    (state.events[k] || []).forEach(ev => {
+      const e = document.createElement("div");
+      e.className = "ev"; e.textContent = ev.title; e.style.background = ev.color;
+      cell.appendChild(e);
+    });
+    cell.onclick = () => openDay(d);
+    grid.appendChild(cell);
+  }
+}
+
+function openDay(d) {
+  selected = key(d);
+  $("dlgTitle").textContent = d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  renderList();
+  $("evTitle").value = "";
+  $("dlg").showModal();
+  $("evTitle").focus();
+}
+
+function renderList() {
+  const list = $("list");
+  list.innerHTML = "";
+  const evs = state.events[selected] || [];
+  if (!evs.length) { list.innerHTML = '<li class="empty">Nothing planned. Add an event below.</li>'; return; }
+  evs.forEach((ev, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="dot" style="background:${ev.color}"></span><span class="t"></span><button aria-label="Delete event">Delete</button>`;
+    li.querySelector(".t").textContent = ev.title; // textContent keeps user input safe
+    li.querySelector("button").onclick = () => {
+      evs.splice(i, 1);
+      if (!evs.length) delete state.events[selected];
+      save(); renderList(); render();
+    };
+    list.appendChild(li);
+  });
+}
+
+function addEvent() {
+  const title = $("evTitle").value.trim();
+  if (!title) { $("evTitle").focus(); return; }
+  (state.events[selected] ||= []).push({ title, color: $("evColor").value });
+  $("evTitle").value = "";
+  save(); renderList(); render();
+}
+
+// Wire up controls
+$("prev").onclick = () => { view.setMonth(view.getMonth() - 1); render(); };
+$("next").onclick = () => { view.setMonth(view.getMonth() + 1); render(); };
+$("today").onclick = () => { view = new Date(); view.setDate(1); render(); };
+$("add").onclick = addEvent;
+$("evTitle").onkeydown = e => { if (e.key === "Enter") addEvent(); };
+$("evColor").oninput = e => { e.target.dataset.touched = "1"; };
+$("close").onclick = () => $("dlg").close();
+$("accent").oninput = e => { state.accent = e.target.value; save(); applySettings(); };
+$("weekStart").onchange = e => { state.weekStart = +e.target.value; save(); render(); };
+$("theme").onchange = e => { state.theme = e.target.value; save(); applySettings(); };
+$("density").onchange = e => { state.density = +e.target.value; save(); render(); };
+
+PRESETS.forEach(c => {
+  const b = document.createElement("button");
+  b.className = "swatch"; b.style.background = c; b.setAttribute("aria-label", "Accent " + c);
+  b.onclick = () => { state.accent = c; save(); applySettings(); };
+  $("swatches").appendChild(b);
+});
+
+applySettings();
+render();
+</script>
+</body>
+</html>
