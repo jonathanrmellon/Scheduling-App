@@ -1,1 +1,30 @@
-
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef1f6; --surface: #ffffff; --ink: #1b2433; --muted: #6b7587;
+    --line: #d9dfe9; --accent: #1f8a70; --accent-ink: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161f; --surface: #1b212d; --ink: #e8ecf4; --muted: #8e98ab; --line: #2b3342;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    padding: 24px 16px 48px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+  h1 { margin: 0; font-size: clamp(2rem, 6vw, 3.4rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  h1 span { color: var(--muted); font-weight: 400; }
+  .nav { display: flex; gap: 8px; }
+  button {
+    font: inherit; cursor: pointer; border: 1px solid var(--line); background:
