@@ -1,0 +1,416 @@
+/* MY CALENDAR - style.css (how everything looks)
+   Press Ctrl+F (Cmd+F on Mac) and search for "SECTION 3" etc. to jump to a part:
+     SECTION 1: THEME
+     SECTION 2: BASE
+     SECTION 3: CALENDAR
+     SECTION 4: POPUPS
+     SECTION 5: TABS and SETTINGS */
+
+/* ================================================================
+   SECTION 1: THEME
+   colors and the font.
+   Change colors here first. The first :root block holds the light colors,
+   the second holds the dark ones. --accent is the green used for buttons and today's date.
+   ================================================================ */
+
+:root {
+  --bg: #eef1f6;
+  --surface: #fff;
+  --ink: #1b2433;
+  --muted: #6b7587;
+  --line: #d9dfe9;
+  --accent: #1f8a70;
+  --accent-ink: #fff;
+}
+:root[data-theme="dark"] {
+  --bg: #12161f;
+  --surface: #1b212d;
+  --ink: #e8ecf4;
+  --muted: #8e98ab;
+  --line: #2b3342;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg: #12161f;
+    --surface: #1b212d;
+    --ink: #e8ecf4;
+    --muted: #8e98ab;
+    --line: #2b3342;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Bricolage Grotesque", system-ui, sans-serif;
+  padding: 24px 16px 48px;
+}
+
+
+/* ================================================================
+   SECTION 2: BASE
+   page width, the month title, buttons and form fields.
+   ================================================================ */
+
+.wrap {
+  max-width: 960px;
+  margin: 0 auto;
+}
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(2rem,6vw,3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+h1 span {
+  color: var(--muted);
+  font-weight: 400;
+}
+.nav {
+  display: flex;
+  gap: 8px;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+button:hover {
+  border-color: var(--accent);
+}
+button.primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+#fatal {
+  background: #fde8e8;
+  color: #8a1c1c;
+  border: 1px solid #f3b4b4;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 20px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+.settings label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+select, input[type="text"], input[type="time"], input[type="date"], input[type="color"] {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+input[type="color"] {
+  padding: 2px;
+  width: 40px;
+  height: 32px;
+  cursor: pointer;
+}
+
+
+/* ================================================================
+   SECTION 3: CALENDAR
+   the month grid, day boxes and event chips.
+   The phone-size tweaks (@media) are at the bottom.
+   ================================================================ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7,1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.dow {
+  background: var(--surface);
+  padding: 10px 8px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 600;
+}
+.day {
+  background: var(--surface);
+  min-height: 96px;
+  padding: 6px;
+  text-align: left;
+  border: 0;
+  border-radius: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+.day:hover {
+  background: var(--bg);
+}
+.day.other {
+  opacity: 0.4;
+}
+.num {
+  font-weight: 600;
+  font-size: 0.9rem;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.day.today .num {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.ev {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.more {
+  font-size: 0.72rem;
+  color: var(--muted);
+  padding-left: 2px;
+}
+.hol {
+  font-size: 0.72rem;
+  color: var(--muted);
+  padding: 2px 6px;
+  border-left: 3px solid var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width:600px) {
+  .day {
+    min-height: 64px;
+    padding: 3px;
+  }
+  .ev, .more, .hol {
+    font-size: 0.62rem;
+    padding: 1px 3px;
+  }
+  .dow {
+    padding: 8px 2px;
+    font-size: 0.7rem;
+  }
+}
+
+
+/* ================================================================
+   SECTION 4: POPUPS
+   the event popup and the calendar popup (lists, form rows, buttons).
+   ================================================================ */
+
+dialog {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  width: min(460px,94vw);
+  padding: 20px;
+}
+dialog::backdrop {
+  background: rgba(10,14,22,0.55);
+}
+dialog h2 {
+  margin: 0 0 12px;
+  font-size: 1.2rem;
+}
+ul {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  max-height: 36vh;
+  overflow-y: auto;
+}
+li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+li .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+li .main {
+  flex: 1;
+  min-width: 0;
+}
+li .t {
+  overflow-wrap: anywhere;
+}
+li .meta {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+li button {
+  padding: 3px 10px;
+  font-size: 0.82rem;
+}
+.empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.row .grow {
+  flex: 1;
+  min-width: 150px;
+}
+.row .grow input {
+  width: 100%;
+}
+.hint {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 0 0 12px;
+}
+#err, #calErr {
+  color: #b42318;
+  font-size: 0.88rem;
+  margin: 0 0 12px;
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+
+/* ================================================================
+   SECTION 5: TABS and SETTINGS
+   the row of calendar tabs and the Settings tab.
+   ================================================================ */
+
+[hidden] {
+  display: none !important;
+}
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 6px;
+}
+.tab {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.tab[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+.tab.add {
+  border-style: dashed;
+  color: var(--muted);
+}
+.tab.gear {
+  margin-left: auto;
+}
+.settings.panel {
+  flex-direction: column;
+  align-items: stretch;
+  flex-wrap: nowrap;
+  max-width: 420px;
+  gap: 14px;
+}
+.settings.panel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.settings.panel label {
+  justify-content: space-between;
+}
+.tdot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+.tabtools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  min-height: 34px;
+}
+.tabtools button {
+  padding: 5px 10px;
+  font-size: 0.85rem;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.danger {
+  color: #b42318;
+  margin-right: auto;
+}
