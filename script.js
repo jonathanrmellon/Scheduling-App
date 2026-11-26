@@ -336,7 +336,7 @@ function renderTabs() {
   $("settingsPanel").hidden = !showSettings;
   ["top", "tabtools", "grid"].forEach(id => { $(id).hidden = showSettings; });
   const tools = $("tabtools"); tools.innerHTML = "";
-  if (state.currentCal === "all") { tools.textContent = "Showing every calendar together. Pick the calendar for a new event in the event form."; return; }
+  if (state.currentCal === "all") { tools.textContent = "Showing every calendar together. Select +New Calendar to keep different events organized."; return; }
   const edit = document.createElement("button"); edit.textContent = "Edit calendar"; edit.onclick = () => openCalDlg(state.currentCal);
   tools.appendChild(edit);
 }
